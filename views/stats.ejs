@@ -1,0 +1,106 @@
+<%- include('partials/header') %>
+
+<div class="container stats-page-container">
+  <div class="breadcrumb">
+    <a href="/"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+  </div>
+
+  <div class="stats-header">
+    <h1>Link Analytics & Details</h1>
+    <p>Real-time performance and tracking metrics for short link <code>/<%= urlRecord.short_code %></code></p>
+  </div>
+
+  <div class="stats-grid">
+    <!-- Main Card -->
+    <div class="card stats-main-card">
+      <div class="stats-metric-highlight">
+        <div class="metric-icon">
+          <i class="fa-solid fa-chart-line"></i>
+        </div>
+        <div class="metric-info">
+          <span class="metric-number"><%= urlRecord.clicks %></span>
+          <span class="metric-title">Total Times Clicked / Redirected</span>
+        </div>
+      </div>
+
+      <div class="link-info-list">
+        <div class="info-row">
+          <span class="info-label">Short URL:</span>
+          <div class="info-action-group">
+            <a href="/<%= urlRecord.short_code %>" target="_blank" class="short-url-link">
+              <%= hostUrl %>/<%= urlRecord.short_code %>
+            </a>
+            <button type="button" class="btn-sm btn-secondary copy-btn" data-copy="<%= hostUrl %>/<%= urlRecord.short_code %>">
+              <i class="fa-regular fa-copy"></i> Copy
+            </button>
+            <a href="/<%= urlRecord.short_code %>" target="_blank" class="btn-sm btn-primary">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> Visit
+            </a>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">Destination URL:</span>
+          <a href="<%= urlRecord.original_url %>" target="_blank" class="original-url-link truncate" title="<%= urlRecord.original_url %>">
+            <%= urlRecord.original_url %>
+          </a>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">Short Code:</span>
+          <span class="detail-badge"><%= urlRecord.short_code %></span>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">Created At:</span>
+          <span class="date-text">
+            <i class="fa-regular fa-calendar"></i>
+            <%= new Date(urlRecord.created_at).toLocaleString() %>
+          </span>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">Last Accessed:</span>
+          <span class="date-text">
+            <i class="fa-regular fa-clock"></i>
+            <%= urlRecord.last_accessed ? new Date(urlRecord.last_accessed).toLocaleString() : 'Not accessed yet' %>
+          </span>
+        </div>
+      </div>
+
+      <div class="danger-zone">
+        <h3>Manage Link</h3>
+        <form action="/urls/delete/<%= urlRecord.short_code %>" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this shortened URL?');">
+          <button type="submit" class="btn btn-danger">
+            <i class="fa-regular fa-trash-can"></i> Delete Short Link
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- QR Code Card -->
+    <div class="card qr-card">
+      <h3><i class="fa-solid fa-qrcode"></i> Mobile QR Code</h3>
+      <p class="qr-desc">Scan to test instant redirection on your mobile device or download for sharing.</p>
+      
+      <div class="qr-display">
+        <img 
+          src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<%= encodeURIComponent(hostUrl + '/' + urlRecord.short_code) %>" 
+          alt="QR Code"
+          class="qr-code-large"
+        >
+      </div>
+
+      <a 
+        href="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=<%= encodeURIComponent(hostUrl + '/' + urlRecord.short_code) %>" 
+        download="nanolink-<%= urlRecord.short_code %>.png"
+        target="_blank"
+        class="btn btn-primary btn-block"
+      >
+        <i class="fa-solid fa-download"></i> Download High-Res QR
+      </a>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

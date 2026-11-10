@@ -1,0 +1,26 @@
+{
+  "name": "nanolink-url-shortener",
+  "version": "1.0.0",
+  "description": "Fast, modern URL Shortener built with Node.js, Express, EJS, and SQLite",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node test-shortener.js"
+  },
+  "keywords": [
+    "url-shortener",
+    "express",
+    "nodejs",
+    "sqlite",
+    "ejs",
+    "codealpha"
+  ],
+  "author": "CodeAlpha Intern",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "ejs": "^7.0.2",
+    "express": "^5.3.0"
+  }
+}

@@ -1,0 +1,369 @@
+<%- include('partials/header') %>
+
+<div class="container">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-badge">
+      <i class="fa-solid fa-bolt"></i> Fast &bull; Reliable &bull; SQLite-Powered
+    </div>
+    <h1 class="hero-title">Shorten Your Links in <span>Seconds</span></h1>
+    <p class="hero-subtitle">
+      Transform long, messy links into short, memorable URLs. Track clicks, generate QR codes, and manage your links effortlessly.
+    </p>
+
+    <!-- Error / Success Alert Messages -->
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-error">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span><%= error %></span>
+      </div>
+    <% } %>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="alert alert-success">
+        <i class="fa-solid fa-circle-check"></i>
+        <span><%= success %></span>
+      </div>
+    <% } %>
+
+    <!-- URL Shortener Form Card -->
+    <div class="shortener-card">
+      <form id="shortenForm" action="/shorten" method="POST" class="shorten-form">
+        <div class="input-group">
+          <div class="input-icon">
+            <i class="fa-solid fa-link"></i>
+          </div>
+          <input 
+            type="url" 
+            name="url" 
+            id="urlInput"
+            placeholder="Paste your long URL here (e.g. https://github.com/...)" 
+            required
+            autocomplete="off"
+            pattern="https?://.+"
+            title="Please enter a valid URL starting with http:// or https://"
+          >
+          <button type="submit" id="submitBtn" class="btn btn-primary">
+            <span class="btn-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Shorten URL</span>
+            <span class="btn-spinner" style="display:none;"><i class="fa-solid fa-spinner fa-spin"></i> Shortening...</span>
+          </button>
+        </div>
+
+        <!-- Advanced Options Toggle -->
+        <div class="custom-code-toggle-wrapper">
+          <button type="button" id="toggleAdvancedBtn" class="btn-text-link">
+            <i class="fa-solid fa-sliders"></i> Optional: Custom Alias & Settings <i class="fa-solid fa-chevron-down toggle-icon"></i>
+          </button>
+
+          <div id="advancedOptions" class="advanced-options" style="display: none;">
+            <div class="custom-code-field">
+              <label for="customCodeInput">
+                <i class="fa-solid fa-tag"></i> Custom Short Code (Alias):
+              </label>
+              <div class="prefix-input-group">
+                <span class="input-prefix"><%= hostUrl %>/</span>
+                <input 
+                  type="text" 
+                  name="customCode" 
+                  id="customCodeInput" 
+                  placeholder="e.g. my-project"
+                  maxlength="30"
+                  pattern="[a-zA-Z0-9-_]+"
+                  title="Only letters, numbers, hyphens, and underscores allowed"
+                >
+              </div>
+              <small class="helper-text">Leave blank to automatically generate a 6-character unique code.</small>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Active Result Box (Shown when a link was just created) -->
+    <% if (typeof latestUrl !== 'undefined' && latestUrl) { %>
+      <div class="result-card" id="latestResultCard">
+        <div class="result-header">
+          <span class="result-tag"><i class="fa-solid fa-circle-check"></i> URL Shortened Successfully!</span>
+          <a href="/stats/<%= latestUrl.short_code %>" class="btn-view-stats">
+            <i class="fa-solid fa-chart-simple"></i> View Analytics
+          </a>
+        </div>
+        
+        <div class="result-body">
+          <div class="result-url-box">
+            <input 
+              type="text" 
+              readonly 
+              value="<%= hostUrl %>/<%= latestUrl.short_code %>" 
+              id="resultUrlInput"
+              class="result-url-input"
+            >
+            <button type="button" class="btn btn-secondary copy-btn" data-copy="<%= hostUrl %>/<%= latestUrl.short_code %>">
+              <i class="fa-regular fa-copy"></i> Copy
+            </button>
+            <a href="/<%= latestUrl.short_code %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary visit-btn">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> Visit
+            </a>
+          </div>
+
+          <div class="result-details">
+            <div class="detail-item">
+              <span class="detail-label">Original Destination:</span>
+              <span class="detail-value truncate" title="<%= latestUrl.original_url %>"><%= latestUrl.original_url %></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Short Code:</span>
+              <span class="detail-badge"><%= latestUrl.short_code %></span>
+            </div>
+          </div>
+
+          <!-- QR Code Preview Block -->
+          <div class="qr-preview-box">
+            <div class="qr-image-wrapper">
+              <img 
+                src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=<%= encodeURIComponent(hostUrl + '/' + latestUrl.short_code) %>" 
+                alt="QR Code for Short URL"
+                loading="lazy"
+                class="qr-code-img"
+              >
+            </div>
+            <div class="qr-info">
+              <h4><i class="fa-solid fa-qrcode"></i> Instant QR Code</h4>
+              <p>Scan with any mobile camera to instantly open your shortened URL.</p>
+              <a 
+                href="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=<%= encodeURIComponent(hostUrl + '/' + latestUrl.short_code) %>" 
+                download="qrcode-<%= latestUrl.short_code %>.png"
+                target="_blank"
+                class="btn-sm btn-outline"
+              >
+                <i class="fa-solid fa-download"></i> Download QR
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% } %>
+  </section>
+
+  <!-- Metrics / Stats Overview Cards -->
+  <section class="stats-overview">
+    <div class="stat-card">
+      <div class="stat-icon icon-links">
+        <i class="fa-solid fa-link"></i>
+      </div>
+      <div class="stat-meta">
+        <span class="stat-number"><%= stats.totalUrls || 0 %></span>
+        <span class="stat-label">Total Links Created</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon icon-clicks">
+        <i class="fa-solid fa-arrow-pointer"></i>
+      </div>
+      <div class="stat-meta">
+        <span class="stat-number"><%= stats.totalClicks || 0 %></span>
+        <span class="stat-label">Total Clicks Tracked</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon icon-db">
+        <i class="fa-solid fa-database"></i>
+      </div>
+      <div class="stat-meta">
+        <span class="stat-number">SQLite 3</span>
+        <span class="stat-label">Persistent Storage</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon icon-speed">
+        <i class="fa-solid fa-gauge-high"></i>
+      </div>
+      <div class="stat-meta">
+        <span class="stat-number">&lt; 5ms</span>
+        <span class="stat-label">Redirect Latency</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recent Shortened Links Section -->
+  <section class="recent-links-section" id="recent-section">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Shortened Links</h2>
+        <p class="section-subtitle">Real-time listing of active URLs stored in your database.</p>
+      </div>
+      <div class="table-actions">
+        <div class="search-input-wrapper">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="linkSearchInput" placeholder="Filter links..." autocomplete="off">
+        </div>
+      </div>
+    </div>
+
+    <% if (urls && urls.length > 0) { %>
+      <div class="table-responsive">
+        <table class="links-table" id="linksTable">
+          <thead>
+            <tr>
+              <th>Short Link</th>
+              <th>Original Destination URL</th>
+              <th>Clicks</th>
+              <th>Created</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% urls.forEach(function(item) { %>
+              <tr class="link-row" data-code="<%= item.short_code %>" data-url="<%= item.original_url.toLowerCase() %>">
+                <td>
+                  <div class="short-link-cell">
+                    <a href="/<%= item.short_code %>" target="_blank" rel="noopener noreferrer" class="link-short-url">
+                      <i class="fa-solid fa-arrow-up-right-from-square"></i> /<%= item.short_code %>
+                    </a>
+                  </div>
+                </td>
+                <td>
+                  <div class="destination-cell">
+                    <a href="<%= item.original_url %>" target="_blank" rel="noopener noreferrer" class="link-orig-url" title="<%= item.original_url %>">
+                      <%= item.original_url %>
+                    </a>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge badge-clicks">
+                    <i class="fa-solid fa-chart-line"></i> <%= item.clicks %>
+                  </span>
+                </td>
+                <td>
+                  <span class="date-text">
+                    <%= new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) %>
+                  </span>
+                </td>
+                <td class="text-right">
+                  <div class="action-buttons">
+                    <button 
+                      type="button" 
+                      class="btn-icon copy-btn" 
+                      data-copy="<%= hostUrl %>/<%= item.short_code %>" 
+                      title="Copy Short URL"
+                    >
+                      <i class="fa-regular fa-copy"></i>
+                    </button>
+                    <a 
+                      href="/stats/<%= item.short_code %>" 
+                      class="btn-icon" 
+                      title="View Stats & QR"
+                    >
+                      <i class="fa-solid fa-chart-simple"></i>
+                    </a>
+                    <form action="/urls/delete/<%= item.short_code %>" method="POST" class="delete-form" onsubmit="return confirm('Are you sure you want to delete this short URL?');">
+                      <button type="submit" class="btn-icon btn-danger" title="Delete Link">
+                        <i class="fa-regular fa-trash-can"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div class="empty-state">
+        <div class="empty-icon"><i class="fa-solid fa-link-slash"></i></div>
+        <h3>No Shortened Links Yet</h3>
+        <p>Paste any long URL above and click <strong>Shorten URL</strong> to create your first link!</p>
+      </div>
+    <% } %>
+  </section>
+
+  <!-- Developer API Documentation Section -->
+  <section class="api-docs-section" id="api-section">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title"><i class="fa-solid fa-code"></i> Developer REST API</h2>
+        <p class="section-subtitle">Easily integrate NanoLink into other applications or scripts via our JSON endpoints.</p>
+      </div>
+    </div>
+
+    <div class="api-grid">
+      <!-- Endpoint 1: POST /api/shorten -->
+      <div class="api-card">
+        <div class="api-card-header">
+          <span class="http-badge post">POST</span>
+          <code class="api-route">/api/shorten</code>
+          <span class="api-desc">Create Short URL</span>
+        </div>
+        <div class="api-card-body">
+          <p class="api-summary">Accepts a long URL and generates a unique short URL record.</p>
+          
+          <div class="code-block-header">
+            <span>Request Body (JSON)</span>
+          </div>
+          <pre><code>{
+  "url": "https://example.com/very/long/article?id=98721",
+  "customCode": "custom-alias" <span class="code-comment">// optional</span>
+}</code></pre>
+
+          <div class="code-block-header">
+            <span>Response (201 Created)</span>
+          </div>
+          <pre><code>{
+  "success": true,
+  "shortCode": "custom-alias",
+  "shortUrl": "<%= hostUrl %>/custom-alias",
+  "originalUrl": "https://example.com/very/long/article?id=98721",
+  "clicks": 0,
+  "createdAt": "2026-11-09 13:00:00"
+}</code></pre>
+
+          <div class="code-block-header">
+            <span>Quick cURL Example</span>
+          </div>
+          <pre><code>curl -X POST <%= hostUrl %>/api/shorten \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://github.com"}'</code></pre>
+        </div>
+      </div>
+
+      <!-- Endpoint 2: GET /api/urls/:code -->
+      <div class="api-card">
+        <div class="api-card-header">
+          <span class="http-badge get">GET</span>
+          <code class="api-route">/api/urls/:code</code>
+          <span class="api-desc">Get Link Analytics</span>
+        </div>
+        <div class="api-card-body">
+          <p class="api-summary">Retrieve metadata, total clicks, and access timestamp for a short code.</p>
+          
+          <div class="code-block-header">
+            <span>Response (200 OK)</span>
+          </div>
+          <pre><code>{
+  "success": true,
+  "data": {
+    "id": 1,
+    "short_code": "abc123",
+    "original_url": "https://github.com",
+    "clicks": 14,
+    "created_at": "2026-11-09 13:00:00",
+    "last_accessed": "2026-11-09 13:20:00"
+  }
+}</code></pre>
+
+          <div class="code-block-header">
+            <span>Quick Fetch Example</span>
+          </div>
+          <pre><code>fetch('<%= hostUrl %>/api/urls/abc123')
+  .then(res => res.json())
+  .then(data => console.log(data));</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<%- include('partials/footer') %>
